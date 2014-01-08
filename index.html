@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html  lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>CHATBOX</title>
+    <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/themes/icon.cs">
+    <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/demo.css">
+    <script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+    <script src="http://www.jeasyui.com/easyui/jquery.easyui.min.js"></script>
+    <script src='http://channel.sinaapp.com/api.js'></script>
+</head>
+<body>     
+    
+
+<div class="easyui-layout" style="width:900px;height:600px;padding:10px;font-size: 18px;">
+<div class="easyui-panel" title="聊天记录列表"  data-options="region:'west',collapsed:false,collapsible:false" style="width:700px;font-size: 18px;" id="msglist">
+</div>
+<div class="easyui-panel" title="用户列表" data-options="region:'center'" style="width:200px;font-size: 18px;" id="usrlist">
+</div>
+</div>
+
+
+    <input type="input" id="ipt_msg" style="width: 600px; height: 30px; font-size: 18px;" />
+    <a href="#" class="easyui-linkbutton" id="btn_send">按回车或点击发送</a>
+    
+
+    <div id="panelName" class="easyui-dialog" title="欢迎" data-options="iconCls:'icon-save',closable: false, shadow: true, modal: true" style="width:300px;height:150px;padding:10px">
+        给自己取个昵称吧！
+        <br>
+        <br>
+         <input type="text" id="ipt_nickname" style="font-size: 18px;" />
+         <a href="#" class="easyui-linkbutton" id="btn_ok">确定</a>
+    </div>
+<script>
+    
+$(function(){
+    
+    var $channel_url = '';
+    var $nickname = '';
+    var $channel = null;
+    
+    //滚动到底部
+    function scrollToBottom() {
+        var scrollTop = $("#msglist")[0].scrollHeight;
+        $("#msglist").scrollTop(scrollTop);
+    }
+    
+    
+    //刷新用户列表
+    function refreshUser()
+    {
+        $.ajax({
+            type: 'POST',
+            url: 'chat.php',
+            data: 'action=getuserlist',
+            complete: function(data, status){  
+                var result = data.responseText;
+                var json = $.parseJSON(result);
+                var userlist = '小风(聊天机器人)<br>';
+                for(var i = 0; i < json.length; i++) {                         
+                    userlist += json[i] + '<br>';
+                }
+                $("#usrlist").html(userlist);              
+            }
+        });
+    }
+    
+    //发送消息
+    function sendMsg()
+    {
+        $.ajax({
+            type: 'POST',
+            url: 'chat.php',
+            data: 'action=sendmsg&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname
+        });  
+        //清空
+        $('#ipt_msg').val('');
+    }
+    
+
+    
+    
+    //加入聊天室
+    function createChannel()
+    {
+        $.ajax({
+            type: 'POST',
+            url: 'chat.php',
+            data: 'action=create_channel&username=' + $nickname,
+            complete: function(data, status){     
+                    var result = data.responseText;
+                    $channel_url = result;
+                    $channel = sae.Channel($channel_url);                 
+                    
+                //获取之前的聊天记录
+                $.ajax({
+                    type: 'POST',
+                    url: 'chat.php',
+                    data: 'action=getmsglist',
+                    complete: function(data, status){                       
+                        var result = data.responseText;                
+                        var json = $.parseJSON(result);
+                        var msglist = '';
+                        for(var i = 0; i < json.length; i++) {                                          
+                            msglist += json[i] + '<br>';
+                        }
+                        $("#msglist").html(msglist);              
+                    }
+                });
+                
+                
+                    
+                    $channel.onmessage = function (message) {
+                        var msglist = $('#msglist').html();
+                        $("#msglist").html(msglist + '<br>' + message.data);
+                        //刷新用户列表
+                        refreshUser();
+                        //聊天记录保持在最下面
+                        scrollToBottom()
+                    };
+                                        
+                    $channel.onopen = function () { 
+                        $.ajax({
+                            type: 'POST',
+                            url: 'chat.php',
+                            data: 'action=connected&username=' + $nickname
+                        }); 
+                    };
+                }
+        });  
+    }
+ 
+    function checkName(){
+        $nickname = $.trim($('#ipt_nickname').val());
+        if($nickname === ''){
+            alert('请为自己取个昵称');
+            return;
+        }
+        else {
+
+        }        
+        
+        createChannel();
+        $('#panelName').dialog('close');
+    }
+
+    $('#btn_send').click(function(e){      
+        if($.trim($('#ipt_msg').val()) === '') {
+            alert('写点什么吧！');
+            return;
+        }
+        
+        sendMsg();
+    });
+    
+    
+    $('#ipt_nickname').keydown(function(e){
+        if(e.keyCode==13){
+        checkName();
+        }
+    });    
+
+    $('#ipt_msg').keydown(function(e){
+        if(e.keyCode==13){
+            if($.trim($('#ipt_msg').val()) === '') {
+                alert('写点什么吧！');
+                return;
+            }        
+            sendMsg();
+        }
+    }); 
+            
+    
+    $('#btn_ok').click(function() {  
+        checkName();
+    });
+    
+    
+    $(window).bind('beforeunload', function(){
+        $.ajax({
+            type: 'POST',
+            url: 'chat.php',
+            data: 'action=disconnected&username=' + $nickname
+        });         
+        $channel.close();
+
+        return '你确定要离开CHATBOX吗？';
+    });     
+
+});   
+
+
+</script>
+</body>
+</html>
+    
