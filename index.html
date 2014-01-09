@@ -6,7 +6,7 @@
     <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/themes/default/easyui.css">
     <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/themes/icon.cs">
     <link rel="stylesheet" type="text/css" href="http://www.jeasyui.com/easyui/demo.css">
-    <script src="http://code.jquery.com/jquery-1.6.1.min.js"></script>
+    <script src="http://lib.sinaapp.com/js/jquery/1.9.1/jquery-1.9.1.min.js"></script>
     <script src="http://www.jeasyui.com/easyui/jquery.easyui.min.js"></script>
     <script src='http://channel.sinaapp.com/api.js'></script>
 </head>
@@ -20,7 +20,8 @@
 </div>
 </div>
 
-
+     对<input class="easyui-combobox" id="usr_select_list" data-options="valueField:'id',textField:'text'">说
+    
     <input type="input" id="ipt_msg" style="width: 600px; height: 30px; font-size: 18px;" />
     <a href="#" class="easyui-linkbutton" id="btn_send">按回车或点击发送</a>
     
@@ -35,10 +36,12 @@
 <script>
     
 $(function(){
-    
+
     var $channel_url = '';
     var $nickname = '';
     var $channel = null;
+    var $usr_select_id = 1;
+    var $usr_select_name = '';
     
     //滚动到底部
     function scrollToBottom() {
@@ -48,8 +51,8 @@ $(function(){
     
     
     //刷新用户列表
-    function refreshUser()
-    {
+    function refreshUser() {
+        
         $.ajax({
             type: 'POST',
             url: 'chat.php',
@@ -57,11 +60,34 @@ $(function(){
             complete: function(data, status){  
                 var result = data.responseText;
                 var json = $.parseJSON(result);
-                var userlist = '小风(聊天机器人)<br>';
+                var usrlist = '小风(聊天机器人)<br>';
+                var usr_select_list = [];
+                usr_select_list[0] = {};
+                usr_select_list[0].id = 1;
+                usr_select_list[0].text = '所有人';
+                var j = 1;
                 for(var i = 0; i < json.length; i++) {                         
-                    userlist += json[i] + '<br>';
+                    usrlist += json[i] + '<br>';
+                    if(json[i] === $nickname){
+                        continue;                        
+                    }
+                    usr_select_list[j] = {};
+                    usr_select_list[j].id = j + 1;
+                    usr_select_list[j].text = json[i];
+                    j++;
                 }
-                $("#usrlist").html(userlist);              
+
+                //下拉列表
+                //$('#usr_select_list').attr('data-options', $('#usr_select_list').attr('data-options') + ', data:' + usr_select_list);
+                $('#usr_select_list').combobox('loadData', usr_select_list);
+                if($usr_select_id > j){
+                    $('#usr_select_list').combobox('setValue', j);
+                    $usr_select_id = j;
+                }                
+                else{
+                    $('#usr_select_list').combobox('setValue', $usr_select_id);
+                }
+                $('#usrlist').html(usrlist);              
             }
         });
     }
@@ -69,17 +95,35 @@ $(function(){
     //发送消息
     function sendMsg()
     {
-        $.ajax({
-            type: 'POST',
-            url: 'chat.php',
-            data: 'action=sendmsg&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname
-        });  
+        //如果是向所有人发消息        
+        if($usr_select_id === 1){
+            $.ajax({
+                type: 'POST',
+                url: 'chat.php',
+                data: 'action=sendmsg&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname
+            });
+        }
+        //向某人私聊
+        else {
+            $.ajax({
+                type: 'POST',
+                url: 'chat.php',
+                data: 'action=sendto&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname + '&to=' + $usr_select_name
+            });
+        }
+        
+  
         //清空
         $('#ipt_msg').val('');
     }
     
-
-    
+    //切换对话对象时触发
+    $('#usr_select_list').combobox({
+        onSelect: function(param){              
+            $usr_select_id =  param.id;     
+            $usr_select_name =  param.text; 
+        }
+    });
     
     //加入聊天室
     function createChannel()
@@ -99,11 +143,20 @@ $(function(){
                     url: 'chat.php',
                     data: 'action=getmsglist',
                     complete: function(data, status){                       
-                        var result = data.responseText;                
+                        var result = data.responseText; 
+                        //console.log(result);
                         var json = $.parseJSON(result);
                         var msglist = '';
-                        for(var i = 0; i < json.length; i++) {                                          
-                            msglist += json[i] + '<br>';
+                        for(var i = 0; i < json.length; i++) {
+                            if(json[i][2] == 'msg') {
+                                msglist += json[i][0] + ' <span style="color: white; background-color: blue">' + json[i][1] + '</span> 说: ' + json[i][3] + '<br>';
+                            }
+                            else if(json[i][2] == 'open') {
+                                msglist += json[i][0] + ' <span style="color: white; background-color: green">' + json[i][1] + ' 进入聊天室</span><br>';   
+                            }
+                            else if(json[i][2] == 'close') {
+                                msglist += json[i][0] + ' <span style="color: white; background-color: red">' + json[i][1] + ' 退出聊天室</span><br>';   
+                            }
                         }
                         $("#msglist").html(msglist);              
                     }
