@@ -13,26 +13,26 @@
 <body>     
     
 
-<div class="easyui-layout" style="width:900px;height:600px;padding:10px;font-size: 18px;">
-<div class="easyui-panel" title="聊天记录列表"  data-options="region:'west',collapsed:false,collapsible:false" style="width:700px;font-size: 18px;" id="msglist">
+<div class="easyui-layout" style="width:900px;height:600px;padding:10px;font-size: 16px;">
+<div class="easyui-panel" title="聊天记录列表"  data-options="region:'west',collapsed:false,collapsible:false" style="width:700px;font-size: 16px;" id="msglist">
 </div>
-<div class="easyui-panel" title="用户列表" data-options="region:'center'" style="width:200px;font-size: 18px;" id="usrlist">
+<div class="easyui-panel" title="用户列表" data-options="region:'center'" style="width:200px;font-size: 16px;" id="usrlist">
 </div>
 </div>
 
      对<input class="easyui-combobox" id="usr_select_list" data-options="valueField:'id',textField:'text'">说
     
-    <input type="input" id="ipt_msg" style="width: 600px; height: 30px; font-size: 18px;" />
+    <input type="input" id="ipt_msg" style="width: 600px; height: 30px; font-size: 16px;" />
     <a href="#" class="easyui-linkbutton" id="btn_send">按回车或点击发送</a>
     
 
     <div id="panelName" class="easyui-dialog" title="欢迎" data-options="iconCls:'icon-save',closable: false, shadow: true, modal: true" style="width:300px;height:150px;padding:10px">
-        给自己取个昵称吧！
+		给自己取个昵称吧！
         <br>
-        <br>
-         <input type="text" id="ipt_nickname" style="font-size: 18px;" />
+		<br>
+         <input type="text" id="ipt_nickname" style="font-size: 16px;" />
          <a href="#" class="easyui-linkbutton" id="btn_ok">确定</a>
-    </div>
+	</div>
 <script>
     
 $(function(){
@@ -44,10 +44,10 @@ $(function(){
     var $usr_select_name = '';
     
     //滚动到底部
-    function scrollToBottom() {
-        var scrollTop = $("#msglist")[0].scrollHeight;
-        $("#msglist").scrollTop(scrollTop);
-    }
+ 	function scrollToBottom() {
+    	var scrollTop = $("#msglist")[0].scrollHeight;
+    	$("#msglist").scrollTop(scrollTop);
+ 	}
     
     
     //刷新用户列表
@@ -58,7 +58,7 @@ $(function(){
             url: 'chat.php',
             data: 'action=getuserlist',
             complete: function(data, status){  
-                var result = data.responseText;
+        		var result = data.responseText;
                 var json = $.parseJSON(result);
                 var usrlist = '小风(聊天机器人)<br>';
                 var usr_select_list = [];
@@ -66,7 +66,7 @@ $(function(){
                 usr_select_list[0].id = 1;
                 usr_select_list[0].text = '所有人';
                 var j = 1;
-                for(var i = 0; i < json.length; i++) {                         
+                for(var i = 0; i < json.length; i++) {                     	   
                     usrlist += json[i] + '<br>';
                     if(json[i] === $nickname){
                         continue;                        
@@ -75,7 +75,7 @@ $(function(){
                     usr_select_list[j].id = j + 1;
                     usr_select_list[j].text = json[i];
                     j++;
-                }
+               	}
 
                 //下拉列表
                 //$('#usr_select_list').attr('data-options', $('#usr_select_list').attr('data-options') + ', data:' + usr_select_list);
@@ -88,7 +88,7 @@ $(function(){
                     $('#usr_select_list').combobox('setValue', $usr_select_id);
                 }
                 $('#usrlist').html(usrlist);              
-            }
+          	}
         });
     }
     
@@ -97,19 +97,19 @@ $(function(){
     {
         //如果是向所有人发消息        
         if($usr_select_id === 1){
-            $.ajax({
-                type: 'POST',
-                url: 'chat.php',
-                data: 'action=sendmsg&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname
-            });
+          	$.ajax({
+            	type: 'POST',
+            	url: 'chat.php',
+            	data: 'action=sendmsg&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname
+        	});
         }
         //向某人私聊
         else {
             $.ajax({
-                type: 'POST',
-                url: 'chat.php',
-                data: 'action=sendto&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname + '&to=' + $usr_select_name
-            });
+            	type: 'POST',
+            	url: 'chat.php',
+            	data: 'action=sendto&message=' + $.trim($('#ipt_msg').val()) + '&username=' + $nickname + '&to=' + $usr_select_name
+        	});
         }
         
   
@@ -119,11 +119,29 @@ $(function(){
     
     //切换对话对象时触发
     $('#usr_select_list').combobox({
-        onSelect: function(param){              
-            $usr_select_id =  param.id;     
-            $usr_select_name =  param.text; 
-        }
+		onSelect: function(param){	            
+            $usr_select_id =  param.id;		
+            $usr_select_name =  param.text;	
+		}
     });
+    
+    //用户加入聊天室
+    function showUserIn(username){
+		$.messager.show({
+    		title:'提示:用户进入',
+			msg:'用户 ' + username + ' 进入了聊天室',
+			showType:'show'
+		});
+	}
+    
+    //用户加入聊天室
+    function showUserOut(username){
+		$.messager.show({
+    		title:'提示:用户离开',
+			msg:'用户 ' + username + ' 离开了聊天室',
+			showType:'show'
+		});
+	}
     
     //加入聊天室
     function createChannel()
@@ -133,39 +151,51 @@ $(function(){
             url: 'chat.php',
             data: 'action=create_channel&username=' + $nickname,
             complete: function(data, status){     
-                    var result = data.responseText;
+        			var result = data.responseText;
                     $channel_url = result;
                     $channel = sae.Channel($channel_url);                 
                     
                 //获取之前的聊天记录
-                $.ajax({
-                    type: 'POST',
-                    url: 'chat.php',
-                    data: 'action=getmsglist',
-                    complete: function(data, status){                       
-                        var result = data.responseText; 
+            	$.ajax({
+            		type: 'POST',
+            		url: 'chat.php',
+            		data: 'action=getmsglist',
+            		complete: function(data, status){                     	
+        				var result = data.responseText; 
                         //console.log(result);
-                        var json = $.parseJSON(result);
-                        var msglist = '';
-                        for(var i = 0; i < json.length; i++) {
-                            if(json[i][2] == 'msg') {
-                                msglist += json[i][0] + ' <span style="color: white; background-color: blue">' + json[i][1] + '</span> 说: ' + json[i][3] + '<br>';
+                		var json = $.parseJSON(result);
+                		var msglist = '';
+                		for(var i = 0; i < json.length; i++) {
+							if(json[i][2] == 'msg') {
+                                msglist += json[i][0] + ' <span style="color: white; background-color: #5bc0de">' + json[i][1] + '</span> 说: ' + json[i][3] + '<br>';
                             }
                             else if(json[i][2] == 'open') {
-                                msglist += json[i][0] + ' <span style="color: white; background-color: green">' + json[i][1] + ' 进入聊天室</span><br>';   
+                             	msglist += json[i][0] + ' <span style="color: white; background-color: #5cb85c">' + json[i][1] + ' 进入聊天室</span><br>';   
                             }
-                            else if(json[i][2] == 'close') {
-                                msglist += json[i][0] + ' <span style="color: white; background-color: red">' + json[i][1] + ' 退出聊天室</span><br>';   
+                    		else if(json[i][2] == 'close') {
+                             	msglist += json[i][0] + ' <span style="color: white; background-color: #d9534f">' + json[i][1] + ' 退出聊天室</span><br>';   
                             }
-                        }
-                        $("#msglist").html(msglist);              
-                    }
-                });
+               			}
+                		$("#msglist").html(msglist);              
+          			}
+        		});
                 
                 
                     
                     $channel.onmessage = function (message) {
                         var msglist = $('#msglist').html();
+                        //这里为了省事投机取巧了，直接对message.data进行判断，chat.php返回的是html格式
+                        //如果是进入聊天室，则使用message窗口提示用户进入     
+                        console.log(message.data);
+                        if(message.data.indexOf(' 进入聊天室</span>') != -1) {                            
+                            var uname = message.data.substring(74, message.data.indexOf(' 进入聊天室</span>'));
+                            showUserIn(uname);
+                        }
+                        else if(message.data.indexOf(' 退出聊天室</span>') != -1) {
+                            var uname = message.data.substring(74, message.data.indexOf(' 退出聊天室</span>'));                           
+                            showUserOut(uname);
+                        }
+                        
                         $("#msglist").html(msglist + '<br>' + message.data);
                         //刷新用户列表
                         refreshUser();
@@ -173,12 +203,12 @@ $(function(){
                         scrollToBottom()
                     };
                                         
-                    $channel.onopen = function () { 
-                        $.ajax({
-                            type: 'POST',
-                            url: 'chat.php',
-                            data: 'action=connected&username=' + $nickname
-                        }); 
+                    $channel.onopen = function () {	
+                    	$.ajax({
+            				type: 'POST',
+            				url: 'chat.php',
+            				data: 'action=connected&username=' + $nickname
+        				}); 
                     };
                 }
         });  
@@ -195,7 +225,7 @@ $(function(){
         }        
         
         createChannel();
-        $('#panelName').dialog('close');
+		$('#panelName').dialog('close');
     }
 
     $('#btn_send').click(function(e){      
@@ -209,37 +239,37 @@ $(function(){
     
     
     $('#ipt_nickname').keydown(function(e){
-        if(e.keyCode==13){
-        checkName();
-        }
-    });    
+		if(e.keyCode==13){
+   		checkName();
+		}
+	});    
 
     $('#ipt_msg').keydown(function(e){
-        if(e.keyCode==13){
-            if($.trim($('#ipt_msg').val()) === '') {
-                alert('写点什么吧！');
-                return;
-            }        
-            sendMsg();
-        }
-    }); 
+		if(e.keyCode==13){
+   		   	if($.trim($('#ipt_msg').val()) === '') {
+            	alert('写点什么吧！');
+            	return;
+        	}        
+        	sendMsg();
+		}
+	}); 
             
     
     $('#btn_ok').click(function() {  
-        checkName();
+		checkName();
     });
     
     
     $(window).bind('beforeunload', function(){
-        $.ajax({
-            type: 'POST',
+    	$.ajax({
+        	type: 'POST',
             url: 'chat.php',
             data: 'action=disconnected&username=' + $nickname
         });         
-        $channel.close();
+		$channel.close();
 
-        return '你确定要离开CHATBOX吗？';
-    });     
+		return '你确定要离开CHATBOX吗？';
+	});     
 
 });   
 
