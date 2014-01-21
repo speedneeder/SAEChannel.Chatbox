@@ -61,13 +61,15 @@ else if($act == 'sendmsg')
         }       
     }
     
-    //向小风聊天机器人请求消息
-    $url= 'http://xiaofengrobot.sinaapp.com/api.php?text=' . $_REQUEST["message"];
-    $answer= file_get_contents($url);
-    $sql = "INSERT  INTO `msg_list` (msg, uname, action, send_time) VALUES ('$answer', '小风', 'msg', NOW());";
+    //向小乐聊天机器人请求消息
+    //比较蛋疼的是小乐机器人不识别utf-8必须先转为gbk
+    
+    $url= 'http://xiao.douqq.com/api.php?msg=' . iconv("utf-8","gbk",$_REQUEST["message"]) . '&type=txt';
+    $answer = file_get_contents($url);
+    $sql = "INSERT  INTO `msg_list` (msg, uname, action, send_time) VALUES ('$answer', '小乐', 'msg', NOW());";
     $mysql->runSql( $sql );
     
-    $msg = date('Y-m-d H:m:s') . ' <span style="color: white; background-color: #5bc0de">小风</span> 说: ' . $answer;
+    $msg = date('Y-m-d H:m:s') . ' <span style="color: white; background-color: #5bc0de">小乐</span> 说: ' . $answer;
     
     // 往名为$channel_name的channel里发送一条消息
     foreach ($user_list as $uid => $uname) {
